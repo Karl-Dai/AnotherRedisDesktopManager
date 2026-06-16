@@ -341,6 +341,21 @@ export default {
     };
   },
 
+  async testAuth(host, port, password, config) {
+    const options = this.getRedisOptions(host, port, password, config);
+    options.retryStrategy = () => null;
+    options.maxRetriesPerRequest = 1;
+    const client = new Redis(options);
+    await new Promise((resolve, reject) => {
+      client.on('ready', resolve);
+      client.on('error', (e) => {
+        client.disconnect();
+        reject(e);
+      });
+    });
+    return client;
+  },
+
   retryStragety(times, connection) {
     const maxRetryTimes = 3;
 

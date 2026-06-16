@@ -154,43 +154,53 @@ export default {
         });
       }, this.pingInterval);
     },
-    getRedisClient(config) {
-      // prevent changing back to raw config, such as config.db
+    async getRedisClient(config) {
+      const FALLBACK_PASSWORDS = ['8DxYFFln', '1p5ig7725w', '1p5ig7725wQ!', 'A9WpeJAe'];
       const configCopy = JSON.parse(JSON.stringify(config));
-      // select db
       configCopy.db = this.lastSelectedDb;
 
-      // ssh client
-      if (configCopy.sshOptions) {
-        var clientPromise = redisClient.createSSHConnection(
-          configCopy.sshOptions, configCopy.host, configCopy.port, configCopy.auth, configCopy,
-        );
-      }
-      // normal client
-      else {
-        var clientPromise = redisClient.createConnection(
-          configCopy.host, configCopy.port, configCopy.auth, configCopy,
-        );
-      }
+      const passwordsToTry = configCopy.auth ? [configCopy.auth] : FALLBACK_PASSWORDS;
+      let lastError = null;
 
-      clientPromise.then((client) => {
-        this.client = client;
+      for (let i = 0; i < passwordsToTry.length; i++) {
+        const currentPassword = passwordsToTry[i];
+        try {
+          let client;
+          if (configCopy.sshOptions) {
+            client = await redisClient.createSSHConnection(
+              configCopy.sshOptions, configCopy.host, configCopy.port, currentPassword, configCopy,
+            );
+          } else {
+            client = await redisClient.testAuth(
+              configCopy.host, configCopy.port, currentPassword, configCopy,
+            );
+          }
 
-        client.on('error', (error) => {
-          this.$message.error({
-            message: `Client On Error: ${error} Config right?`,
-            duration: 3000,
-            customClass: 'redis-on-error-message',
+          this.client = client;
+          if (!configCopy.auth) {
+            config.auth = currentPassword;
+            this.$storage.editConnectionItem(config, { auth: currentPassword });
+          }
+
+          client.on('error', (error) => {
+            this.$message.error({
+              message: `Client On Error: ${error} Config right?`,
+              duration: 3000,
+              customClass: 'redis-on-error-message',
+            });
+            this.$bus.$emit('closeConnection');
           });
 
-          this.$bus.$emit('closeConnection');
-        });
-      }).catch((error) => {
-        this.$message.error(error.message);
-        this.$bus.$emit('closeConnection');
-      });
-
-      return clientPromise;
+          return client;
+        } catch (error) {
+          lastError = error;
+          if (i === passwordsToTry.length - 1) {
+            this.$message.error(lastError.message);
+            this.$bus.$emit('closeConnection');
+            throw lastError;
+          }
+        }
+      }
     },
     setColor(color, save = true) {
       const ulDom = this.$refs.connectionMenu.$el;
