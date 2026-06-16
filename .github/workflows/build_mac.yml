@@ -14,20 +14,20 @@ jobs:
       contents: write
 
     env:
-      GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      CSC_LINK: ${{secrets.CSC_LINK}}
-      CSC_KEY_PASSWORD: ${{secrets.CSC_KEY_PASSWORD}}
-      APPLEID: ${{secrets.APPLEID}}
-      APPLEID_PASSWORD: ${{secrets.APPLEID_PASSWORD}}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      APPLEID: ${{ secrets.APPLEID }}
+      APPLEID_PASSWORD: ${{ secrets.APPLEID_PASSWORD }}
 
     steps:
     - name: Import signing keychain
-      if: ${{ secrets.CSC_LINK != '' }}
+      if: ${{ env.CSC_LINK != '' }}
       uses: apple-actions/import-codesign-certs@v2
       with:
         keychain: signing_temp
-        p12-file-base64: ${{secrets.CSC_LINK}}
-        p12-password: ${{secrets.CSC_KEY_PASSWORD}}
+        p12-file-base64: ${{ secrets.CSC_LINK }}
+        p12-password: ${{ secrets.CSC_KEY_PASSWORD }}
 
     - uses: actions/checkout@v4
     - name: Use Node.js
@@ -36,7 +36,7 @@ jobs:
         node-version: 16
 
     - name: Disable notarization when no signing cert
-      if: ${{ secrets.CSC_LINK == '' }}
+      if: ${{ env.CSC_LINK == '' }}
       run: |
         node -e "
           const p = require('./pack/electron/package.json');
