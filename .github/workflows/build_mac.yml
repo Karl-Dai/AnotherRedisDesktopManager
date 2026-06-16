@@ -56,7 +56,7 @@ jobs:
       if: ${{ env.CSC_LINK == '' }}
       run: |
         unset CSC_LINK CSC_KEY_PASSWORD
-        CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --project=dist -m -p always
+        CSC_IDENTITY_AUTO_DISCOVERY=false ./node_modules/.bin/electron-builder --project=dist -m -p always
 
     - name: Cleanup keychain
       if: always()
