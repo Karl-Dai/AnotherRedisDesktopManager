@@ -3,6 +3,7 @@ name: build_mac
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   build:
