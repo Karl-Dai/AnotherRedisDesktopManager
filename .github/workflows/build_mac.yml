@@ -44,6 +44,7 @@ jobs:
           delete p.build.mac.extendInfo;
           require('fs').writeFileSync('./pack/electron/package.json', JSON.stringify(p, null, 2));
         "
+        echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
 
     - run: npm ci
     - run: npm run pack:prepare
