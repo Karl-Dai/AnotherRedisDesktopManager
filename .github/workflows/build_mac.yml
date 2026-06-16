@@ -44,11 +44,19 @@ jobs:
           delete p.build.mac.extendInfo;
           require('fs').writeFileSync('./pack/electron/package.json', JSON.stringify(p, null, 2));
         "
-        echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
 
     - run: npm ci
     - run: npm run pack:prepare
-    - run: npm run pack:mac:publish
+
+    - name: Build and publish mac (signed)
+      if: ${{ env.CSC_LINK != '' }}
+      run: npm run pack:mac:publish
+
+    - name: Build and publish mac (unsigned)
+      if: ${{ env.CSC_LINK == '' }}
+      run: |
+        unset CSC_LINK CSC_KEY_PASSWORD
+        CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --project=dist -m -p always
 
     - name: Cleanup keychain
       if: always()
